@@ -1,0 +1,72 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+}
+
+.list-group-item {
+    border-left: 4px solid transparent;
+}
+
+.list-group-item:hover {
+    border-left: 4px solid #0d6efd;
+}
+
+:root {
+    --primary-color: #FDB813 !important;
+    --text-color: #333333;
+}
+
+
+#building-canvas {
+    width: 100%;
+    height: 500px;
+    margin-bottom: 2rem;
+}
+
+.btn-primary {
+    background-color: #FDB813 !important; /* Ändrar Bootstrap’s blå knappar */
+    border-color: #FDB813 !important;
+}
+
+.bg-primary {
+    background-color: #FDB813 !important;
+}
+
+.text-primary {
+    color: #FDB813 !important;
+}
+
+.btn-outline-primary{
+    color: #FDB813 !important;
+    border-color: #FDB813;
+}
+.btn-outline-primary:hover{
+    color: white !important;
+    background-color: #FDB813;
+    border-color: #FDB813;
+}
+
+.btn-check:checked + .btn,
+.btn.active,
+.btn.show,
+.btn:first-child:active,
+:not(.btn-check) + .btn:active {
+    background-color: #FDB813 !important;
+    border-color: #FDB813 !important;
+    color: white !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: #FDB813 !important;
+    border-color: #FDB813 !important;
+    color: white !important;
+}

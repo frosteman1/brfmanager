@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRF Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles/style.css">
+    <style>
+        .wrapper {
+            display: flex;
+            width: 100%;
+        }
+
+        #sidebar {
+            min-width: 250px;
+            max-width: 250px;
+            min-height: 100vh;
+            background: #343a40;
+            color: #fff;
+            transition: all 0.3s;
+        }
+
+        #sidebar.active {
+            margin-left: -250px;
+        }
+
+        #sidebar .sidebar-header {
+            padding: 20px;
+            background: #2c3136;
+        }
+
+        #sidebar ul.components {
+            padding: 20px 0;
+        }
+
+        #sidebar ul li a {
+            padding: 10px 20px;
+            display: block;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        #sidebar ul li a:hover {
+            background: #2c3136;
+        }
+
+        #content {
+            width: 100%;
+            padding: 20px;
+            min-height: 100vh;
+            transition: all 0.3s;
+        }
+
+        .navbar {
+            padding: 15px 10px;
+            background: #fff;
+            border: none;
+            border-radius: 0;
+            margin-bottom: 40px;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h3>BRF Manager</h3>
+            </div>
+
+            <ul class="list-unstyled components">
+                <li>
+                    <a href="test.html">
+                        <i class="fas fa-home"></i> Översikt
+                    </a>
+                </li>
+                <li class="active">
+                    <a href="underhallsplan.html">
+                        <i class="fas fa-tools"></i> Underhållsplan
+                    </a>
+                </li>
+                <!-- Add other menu items as in test.html -->
+            </ul>
+        </nav>
+    
+    <!-- <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">BRF Manager</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#energy">Energiförbrukning</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#maintenance">Underhåll</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#documents">Dokument</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="underhallsplanLink">
+                            <i class="fas fa-tools"></i> Underhållsplan
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav> -->
+    <div id="content">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <button type="button" id="sidebarCollapse" class="btn btn-info">
+                <i class="fas fa-align-left"></i>
+            </button>
+        </div>
+    </nav>
+   
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2>Byggnadöversikt</h2>
+                <div id="building-canvas"></div>
+            </div>
+            <div class="col-md-4">
+                <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#buildingPreferences">
+                    Ändra byggnadsegenskaper
+                </button>
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Byggnadsinformation</h5>
+                        <p class="mb-1">Antal våningar: <span id="floorDisplay">3</span></p>
+                        <p class="mb-1">Antal lägenheter: <span id="apartmentDisplay">6</span></p>
+                        <p class="mb-1">Dimensioner: <span id="dimensionsDisplay">20m × 30m</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Energy Dashboard -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Energiförbrukning</h5>
+                        <div class="btn-group" role="group" aria-label="Tidsintervall">
+                            <input type="radio" class="btn-check" name="interval" id="weekBtn" value="week" checked>
+                            <label class="btn btn-outline-primary" for="weekBtn">Vecka</label>
+
+                            <input type="radio" class="btn-check" name="interval" id="monthBtn" value="month">
+                            <label class="btn btn-outline-primary" for="monthBtn">Månad</label>
+
+                            <input type="radio" class="btn-check" name="interval" id="yearBtn" value="year">
+                            <label class="btn btn-outline-primary" for="yearBtn">År</label>
+                        </div>
+                        <canvas id="energyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Energy Stats -->
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Aktuell förbrukning</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h6 class="mb-0">El</h6>
+                                <small class="text-muted">Senaste 24h</small>
+                            </div>
+                            <h3 class="mb-0">42 kWh</h3>
+                        </div>
+                        <div class="progress mb-3" style="height: 10px;">
+                            <div class="progress-bar bg-success" style="width: 65%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h6 class="mb-0">Värme</h6>
+                                <small class="text-muted">Senaste 24h</small>
+                            </div>
+                            <h3 class="mb-0">68 kWh</h3>
+                        </div>
+                        <div class="progress mb-3" style="height: 10px;">
+                            <div class="progress-bar bg-warning" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Energitips</h5>
+                        <div class="alert alert-info">
+                            <strong>Potential besparing:</strong> Sänk inomhustemperaturen med 1°C kan spara upp till 5% av värmekostnaden.
+                        </div>
+                        <div class="alert alert-success">
+                            <strong>Bra jobbat!</strong> Din förbrukning är 15% lägre än förra månaden.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Building Preferences Modal -->
+        <div class="modal fade" id="buildingPreferences" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Byggnadsegenskaper</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-4">
+                            <h6>Ladda upp energideklaration</h6>
+                            <div class="alert alert-info">
+                                Ladda upp din energideklaration i PDF-format för att automatiskt fylla i relevanta värden.
+                            </div>
+                            <input type="file" class="form-control" id="energyDeclarationUpload" accept=".pdf">
+                            <button type="button" class="btn btn-primary mt-2" id="processPDFButton">Bearbeta PDF</button>
+                            <div id="pdfStatus" class="mt-2"></div>
+                        </div>
+                        <form id="building-form">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="mb-3">Grundläggande mått</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label">Antal våningar</label>
+                                        <input type="number" class="form-control" id="floors" value="3" min="1" max="20">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Bredd (meter)</label>
+                                        <input type="number" class="form-control" id="width" value="20" min="1">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Längd (meter)</label>
+                                        <input type="number" class="form-control" id="length" value="30" min="1">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Våningshöjd (meter)</label>
+                                        <input type="number" class="form-control" id="floorHeight" value="3" min="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="mb-3">Utseende</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label">Taktyp</label>
+                                        <select class="form-control" id="roofType">
+                                            <option value="flat">Platt tak</option>
+                                            <option value="pitched">Sadeltak</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Takvinkel (grader)</label>
+                                        <input type="number" class="form-control" id="roofAngle" value="30" min="0" max="45">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Fasadfärg</label>
+                                        <input type="color" class="form-control" id="buildingColor" value="#cccccc">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Antal lägenheter per våning</label>
+                                        <input type="number" class="form-control" id="apartmentsPerFloor" value="2" min="1">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Antal fönster per lägenhet</label>
+                                        <input type="number" class="form-control" id="windowsPerApartment" value="3" min="1">
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input type="checkbox" class="form-check-input" id="hasBalconies" checked>
+                                        <label class="form-check-label" for="hasBalconies">Inkludera balkonger</label>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Balkongdjup (meter)</label>
+                                        <input type="number" class="form-control" id="balconyDepth" value="1.5" min="0" step="0.1">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12 mt-4">
+                                    <h6 class="mb-3">Energiegenskaper</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Väggmaterial</label>
+                                                <select class="form-control" id="wallMaterial">
+                                                    <option value="brick">Tegel (U-värde: 0.8)</option>
+                                                    <option value="concrete">Betong (U-värde: 0.9)</option>
+                                                    <option value="wood">Trä (U-värde: 0.5)</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Isoleringstyp vägg</label>
+                                                <select class="form-control" id="wallInsulation">
+                                                    <option value="mineral">Mineralull (λ: 0.037)</option>
+                                                    <option value="eps">EPS (λ: 0.033)</option>
+                                                    <option value="cellulose">Cellulosa (λ: 0.040)</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Isoleringstjocklek vägg (mm)</label>
+                                                <input type="number" class="form-control" id="wallInsulationThickness" value="200" min="0" step="10">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Fönstertyp</label>
+                                                <select class="form-control" id="windowType">
+                                                    <option value="triple">3-glas (U-värde: 0.8)</option>
+                                                    <option value="double">2-glas (U-värde: 1.3)</option>
+                                                    <option value="single">1-glas (U-värde: 5.0)</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Takets isoleringstjocklek (mm)</label>
+                                                <input type="number" class="form-control" id="roofInsulationThickness" value="400" min="0" step="10">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Golvets isoleringstjocklek (mm)</label>
+                                                <input type="number" class="form-control" id="floorInsulationThickness" value="300" min="0" step="10">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12 mt-4">
+                                <h6 class="mb-3">Tekniska system</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <!-- Heating & Cooling -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Uppvärmningssystem</label>
+                                            <select class="form-control" id="heatingSystem">
+                                                <option value="district">Fjärrvärme</option>
+                                                <option value="heatpump">Värmepump</option>
+                                                <option value="gas">Gas</option>
+                                                <option value="electric">Direktverkande el</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Värmepumpstyp (om tillämpligt)</label>
+                                            <select class="form-control" id="heatPumpType">
+                                                <option value="none">Ingen värmepump</option>
+                                                <option value="air">Luft/luft</option>
+                                                <option value="airwater">Luft/vatten</option>
+                                                <option value="ground">Bergvärme</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Kylsystem</label>
+                                            <select class="form-control" id="coolingSystem">
+                                                <option value="none">Inget aktivt kylsystem</option>
+                                                <option value="ac">Luftkonditionering</option>
+                                                <option value="ventilation">Ventilationskyla</option>
+                                                <option value="passive">Passiv kylning</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <!-- Ventilation & Water -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Ventilationssystem</label>
+                                            <select class="form-control" id="ventilationType">
+                                                <option value="natural">Självdrag</option>
+                                                <option value="mechanical">Mekanisk ventilation</option>
+                                                <option value="ftx">FTX (värmeåtervinning)</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Varmvattenberedning</label>
+                                            <select class="form-control" id="waterHeating">
+                                                <option value="district">Fjärrvärme</option>
+                                                <option value="electric">Elektrisk</option>
+                                                <option value="heatpump">Värmepump</option>
+                                                <option value="solar">Solvärme</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12 mt-4">
+                                <h6 class="mb-3">Byggnadsinformation & Historik</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Plats</label>
+                                            <select class="form-control" id="buildingLocation">
+                                                <option value="Stockholm">Stockholm</option>
+                                                <option value="Göteborg">Göteborg</option>
+                                                <option value="Malmö">Malmö</option>
+                                                <option value="Umeå">Umeå</option>
+                                                <option value="Uppsala">Uppsala</option>
+                                                <option value="Örebro">Örebro</option>
+                                                <option value="Linköping">Linköping</option>
+                                                <option value="Västerås">Västerås</option>
+                                                <option value="Norrköping">Norrköping</option>
+                                                <option value="Luleå">Luleå</option>
+                                            </select>
+                                            <div class="form-text">
+                                                Plats används för att beräkna klimatpåverkan
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Nybyggnadsår</label>
+                                            <input type="number" class="form-control" id="constructionYear" value="1980" min="1800" max="2024">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Senaste renovering</label>
+                                            <input type="number" class="form-control" id="lastRenovation" value="2010" min="1800" max="2024">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Byggnadsriktning (grader från norr)</label>
+                                            <input type="number" class="form-control" id="buildingOrientation" value="0" min="0" max="359">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Skuggning</label>
+                                            <select id="shading" name="shading">
+                                                <option value="none">Ingen skuggning</option>
+                                                <option value="trees">Träd</option>
+                                                <option value="buildings">Byggnader</option>
+                                                <option value="terrain">Terräng</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Smart styrning</label>
+                                            <select multiple class="form-control" id="smartControls">
+                                                <option value="thermostat">Smart termostat</option>
+                                                <option value="scheduling">Schemalagd värme</option>
+                                                <option value="presence">Närvarostyrning</option>
+                                                <option value="weather">Väderprognosstyrning</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12 mt-4">
+                                <h6 class="mb-3">Underhåll & Förbättringar</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Underhållsschema</label>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>System</th>
+                                                    <th>Senaste service</th>
+                                                    <th>Nästa service</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>Värmesystem</td>
+                                                    <td><input type="date" class="form-control" id="heatingLastService"></td>
+                                                    <td><input type="date" class="form-control" id="heatingNextService"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Ventilation</td>
+                                                    <td><input type="date" class="form-control" id="ventilationLastService"></td>
+                                                    <td><input type="date" class="form-control" id="ventilationNextService"></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                        <button type="button" class="btn btn-primary" id="savePreferences">Spara ändringar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Dashboard Overview -->
+            <div class="col-md-8">
+                <h2>Dashboard</h2>
+                
+                <div class="row">
+                    <!-- Energy Card -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Energiförbrukning</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Denna månad</h6>
+                                <p class="card-text display-4">2,345 kWh</p>
+                                <p class="text-success">-5% jämfört med förra månaden</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Water Usage Card -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Vattenförbrukning</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Denna månad</h6>
+                                <p class="card-text display-4">156 m³</p>
+                                <p class="text-danger">+2% jämfört med förra månaden</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Maintenance -->
+            <div class="col-md-4">
+                <h3>Kommande underhåll</h3>
+                <div class="list-group">
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">Ventilationsservice</h5>
+                            <small>3 dagar</small>
+                        </div>
+                        <p class="mb-1">Årlig kontroll av ventilationssystem</p>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">Målning trapphus</h5>
+                            <small>2 veckor</small>
+                        </div>
+                        <p class="mb-1">Ommålning av trapphus på plan 1-3</p>
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Energy Calculation Results -->
+        <div id="energyConsumption"></div>
+        <div class="mt-4">
+            <canvas id="energyUsageChart"></canvas>
+        </div>
+    </div>
+</div>
+</div>
+
+    <!-- Load libraries first -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    
+    <!-- Custom scripts -->
+    <script src="js/auth.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/climateData.js"></script>
+    <script src="js/energyCalculations.js"></script>
+    <script src="js/sidebar.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/checkAuth.js"></script>
+    
+
+    </div>
+</body>
+</html>
