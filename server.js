@@ -5,7 +5,7 @@ const path = require('path');
 require('dotenv').config();
 const maintenanceRoutes = require('./backend/routes/maintenance.js');
 
-const app = express();
+// const app = express();
 
 // Middleware
 app.use(cors());
@@ -30,14 +30,13 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/login.html'));
 });
 
-const PORT = process.env.PORT || 3002;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+// const PORT = process.env.PORT || 3002;
+// app.listen(PORT, () => {
+//     console.log(`Server running on port ${PORT}`);
+// });
 
 
 //Adding to serve static files
-const express = require("express");
 const app = express();
 const path = require("path");
 
