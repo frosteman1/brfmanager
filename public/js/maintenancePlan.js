@@ -336,6 +336,16 @@ function deleteItem(itemId) {
     }
 }
 
+function updateStatus(itemId, newStatus) {
+    const item = maintenanceItems.find(i => i.id === itemId);
+    if (item) {
+        item.status = newStatus; // Update the item's status
+        saveMaintenanceItems(); // Save the updated items
+        updateCharts(); // Update the charts to reflect the change
+        renderMaintenanceList(); // Re-render the maintenance list
+    }
+}
+
 // Add this CSS to your stylesheet
 const styles = `
 .status-indicator {
