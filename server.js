@@ -13,12 +13,9 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // MongoDB connection
-console.log('Attempting to connect to MongoDB...'); // Debug log
+console.log('Attempting to connect to MongoDB...');
 
 mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    retryWrites: true,
     w: 'majority'
 })
 .then(() => {
