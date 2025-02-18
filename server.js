@@ -1,30 +1,45 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 
-// Basic middleware
+// Middleware
+app.use(cors());
 app.use(express.json());
 
-// Simple health check
+// Quick response endpoints
 app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-// Root path
 app.get('/', (req, res) => {
     res.status(200).send('Server is running');
 });
 
+app.get('/favicon.ico', (req, res) => {
+    res.status(204).end();  // No content response for favicon
+});
+
 // Start server
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 
-// Keep the process alive
-process.stdin.resume();
+// Handle server timeouts
+server.keepAliveTimeout = 61 * 1000;
+server.headersTimeout = 65 * 1000;
 
 // Basic error handling
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something broke!');
+});
+
+// Graceful shutdown
 process.on('SIGTERM', () => {
     console.log('Received SIGTERM');
-    process.exit(0);
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
 });
