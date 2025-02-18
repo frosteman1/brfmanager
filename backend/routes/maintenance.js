@@ -19,22 +19,62 @@ router.post('/save', auth, async (req, res) => {
     try {
         const { maintenanceItems } = req.body;
         
-        // Delete existing items for this user
-        await MaintenanceItem.deleteMany({ userId: req.user.userId });
+        // Validera inkommande data
+        if (!maintenanceItems || !Array.isArray(maintenanceItems)) {
+            console.error('Invalid maintenance items format:', maintenanceItems);
+            return res.status(400).json({ message: 'Invalid maintenance items format' });
+        }
+
+        console.log('Received maintenance items:', maintenanceItems);
+        console.log('User ID:', req.user.userId);
         
-        // Add userId to each item
-        const itemsWithUserId = maintenanceItems.map(item => ({
-            ...item,
-            userId: req.user.userId
-        }));
+        // Delete existing items for this user
+        const deleteResult = await MaintenanceItem.deleteMany({ userId: req.user.userId });
+        console.log('Deleted existing items:', deleteResult);
+        
+        // Add userId and validate each item
+        const itemsWithUserId = maintenanceItems.map(item => {
+            // Validera required fält
+            if (!item.category || !item.description || !item.cost || !item.plannedYear || !item.priority) {
+                throw new Error('Missing required fields in maintenance item');
+            }
+
+            return {
+                ...item,
+                userId: req.user.userId,
+                // Säkerställ att alla required fält finns och har rätt format
+                cost: parseInt(item.cost),
+                plannedYear: parseInt(item.plannedYear),
+                interval: parseInt(item.interval) || 30,
+                name: item.name || item.description,
+                date: item.date || new Date().toISOString().split('T')[0],
+                status: item.status || 'Planerad'
+            };
+        });
+        
+        console.log('Prepared items for saving:', itemsWithUserId);
         
         // Save new items
-        await MaintenanceItem.insertMany(itemsWithUserId);
+        const savedItems = await MaintenanceItem.insertMany(itemsWithUserId);
+        console.log('Successfully saved items:', savedItems.length);
         
-        res.json({ message: 'Maintenance items saved successfully' });
+        res.json({ 
+            message: 'Maintenance items saved successfully',
+            items: savedItems 
+        });
     } catch (error) {
         console.error('Error saving maintenance items:', error);
-        res.status(500).json({ message: 'Failed to save maintenance items' });
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack
+        });
+        
+        // Skicka mer detaljerat felmeddelande
+        res.status(500).json({ 
+            message: 'Failed to save maintenance items',
+            error: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 

@@ -143,26 +143,43 @@ async function saveMaintenanceItems() {
             throw new Error('Du måste vara inloggad för att spara underhållsplanen');
         }
 
+        // Validera data innan vi skickar
+        if (!Array.isArray(maintenanceItems) || maintenanceItems.length === 0) {
+            throw new Error('Inga underhållsposter att spara');
+        }
+
         const headers = {
             'Content-Type': 'application/json',
             'x-auth-token': token
         };
 
-        // Förbered data för servern
-        const itemsToSave = maintenanceItems.map(item => ({
-            ...item,
-            // Ta bort eventuella id/_id fält som kan orsaka konflikter med MongoDB
-            id: undefined,
-            // Säkerställ att alla required fält finns med
-            name: item.name || item.description,
-            date: item.date || new Date().toISOString().split('T')[0],
-            // Konvertera numeriska värden
-            cost: parseInt(item.cost),
-            plannedYear: parseInt(item.plannedYear),
-            interval: parseInt(item.interval) || 30
-        }));
+        // Förbered och validera data
+        const itemsToSave = maintenanceItems.map(item => {
+            // Validera required fält
+            if (!item.category || !item.description || !item.cost || !item.plannedYear || !item.priority) {
+                throw new Error('Alla required fält måste fyllas i');
+            }
 
-        console.log('Sending maintenance items:', itemsToSave);
+            return {
+                category: item.category,
+                description: item.description,
+                cost: parseInt(item.cost),
+                plannedYear: parseInt(item.plannedYear),
+                priority: item.priority,
+                status: item.status || 'Planerad',
+                interval: parseInt(item.interval) || 30,
+                name: item.description, // Använd description som name
+                date: item.date || new Date().toISOString().split('T')[0],
+                // Valfria fält
+                projectId: item.projectId,
+                energySaving: item.energySaving,
+                location: item.location,
+                building: item.building,
+                actualCost: item.actualCost ? parseInt(item.actualCost) : undefined
+            };
+        });
+
+        console.log('Prepared items to save:', itemsToSave);
 
         const response = await fetch('/api/maintenance/save', {
             method: 'POST',
@@ -170,7 +187,9 @@ async function saveMaintenanceItems() {
             body: JSON.stringify({ maintenanceItems: itemsToSave })
         });
 
+        console.log('Full response:', response);
         console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries([...response.headers]));
 
         if (!response.ok) {
             const errorData = await response.json();
@@ -181,15 +200,19 @@ async function saveMaintenanceItems() {
         const result = await response.json();
         console.log('Save successful:', result);
         
-        // Om sparandet lyckas, uppdatera lokala items med server-genererade IDs
+        // Uppdatera lokala items med server response
         if (result.items) {
             maintenanceItems = result.items;
-            renderMaintenanceList(); // Uppdatera listan med nya IDs
+            renderMaintenanceList();
         }
         
     } catch (error) {
         console.error('Error saving maintenance items:', error);
         console.error('Stack trace:', error.stack);
+        console.error('Request data:', {
+            maintenanceItems,
+            token: token ? 'Token exists' : 'No token'
+        });
         alert(error.message || 'Det gick inte att spara underhållsplanen. Försök igen senare.');
     }
 }
