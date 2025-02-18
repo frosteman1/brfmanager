@@ -148,12 +148,26 @@ async function saveMaintenanceItems() {
             'x-auth-token': token
         };
 
-        console.log('Sending maintenance items:', maintenanceItems);
+        // Förbered data för servern
+        const itemsToSave = maintenanceItems.map(item => ({
+            ...item,
+            // Ta bort eventuella id/_id fält som kan orsaka konflikter med MongoDB
+            id: undefined,
+            // Säkerställ att alla required fält finns med
+            name: item.name || item.description,
+            date: item.date || new Date().toISOString().split('T')[0],
+            // Konvertera numeriska värden
+            cost: parseInt(item.cost),
+            plannedYear: parseInt(item.plannedYear),
+            interval: parseInt(item.interval) || 30
+        }));
+
+        console.log('Sending maintenance items:', itemsToSave);
 
         const response = await fetch('/api/maintenance/save', {
             method: 'POST',
             headers: headers,
-            body: JSON.stringify({ maintenanceItems })
+            body: JSON.stringify({ maintenanceItems: itemsToSave })
         });
 
         console.log('Response status:', response.status);
@@ -166,6 +180,12 @@ async function saveMaintenanceItems() {
 
         const result = await response.json();
         console.log('Save successful:', result);
+        
+        // Om sparandet lyckas, uppdatera lokala items med server-genererade IDs
+        if (result.items) {
+            maintenanceItems = result.items;
+            renderMaintenanceList(); // Uppdatera listan med nya IDs
+        }
         
     } catch (error) {
         console.error('Error saving maintenance items:', error);
