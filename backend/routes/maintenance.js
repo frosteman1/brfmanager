@@ -1,32 +1,40 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth.js');
-const MaintenanceItem = require('../models/maintenanceitem.js');
+const auth = require('../middleware/auth');
+const MaintenanceItem = require('../models/MaintenanceItem');
+
+// GET maintenance items
+router.get('/', auth, async (req, res) => {
+    try {
+        const items = await MaintenanceItem.find({ userId: req.user.userId });
+        res.json(items);
+    } catch (error) {
+        console.error('Error fetching maintenance items:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 
 // Save maintenance items
 router.post('/save', auth, async (req, res) => {
     try {
         const { maintenanceItems } = req.body;
-        const userId = req.user.userId;
-
-        // Log for debugging
-        console.log('Saving items:', maintenanceItems);
-        console.log('User ID:', userId);
-
+        
         // Delete existing items for this user
-        await MaintenanceItem.deleteMany({ userId });
-
-        // Save new items with userId
-        const items = maintenanceItems.map(item => ({
+        await MaintenanceItem.deleteMany({ userId: req.user.userId });
+        
+        // Add userId to each item
+        const itemsWithUserId = maintenanceItems.map(item => ({
             ...item,
-            userId
+            userId: req.user.userId
         }));
-        await MaintenanceItem.insertMany(items);
-
+        
+        // Save new items
+        await MaintenanceItem.insertMany(itemsWithUserId);
+        
         res.json({ message: 'Maintenance items saved successfully' });
     } catch (error) {
         console.error('Error saving maintenance items:', error);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Failed to save maintenance items' });
     }
 });
 

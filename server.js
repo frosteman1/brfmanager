@@ -35,6 +35,9 @@ mongoose.connect(process.env.MONGODB_URI)
         const authRoutes = require('./backend/routes/auth');
         app.use('/api/auth', authRoutes);
         
+        const maintenanceRoutes = require('./backend/routes/maintenance');
+        app.use('/api/maintenance', maintenanceRoutes);
+        
         // Add other routes here as needed
     })
     .catch(err => {
