@@ -5,12 +5,11 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3003;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public')); // Serve static files
 
 // MongoDB connection
 console.log('Attempting to connect to MongoDB...');
@@ -31,21 +30,25 @@ mongoose.connect(process.env.MONGODB_URI, {
     process.exit(1);
 });
 
-// Error handling
-mongoose.connection.on('error', err => {
-    console.error('MongoDB connection error:', err);
-});
-
-mongoose.connection.on('disconnected', () => {
-    console.log('MongoDB disconnected');
-});
-
 // Routes
-app.use('/api/auth', require('./backend/routes/auth.js'));
-app.use('/api/buildings', require('./backend/routes/buildings.js'));
-app.use('/api/maintenance', require('./backend/routes/maintenance.js'));
+const authRoutes = require('./backend/routes/auth');
+const maintenanceRoutes = require('./backend/routes/maintenance');
 
-console.log('Server has started and should be running...');
+app.use('/api/auth', authRoutes);
+app.use('/api/maintenance', maintenanceRoutes);
 
-// Start server
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Serve static files for any other route
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+// Error handling
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something broke!');
+});
