@@ -1,5 +1,5 @@
 // Configuration
-const API_URL = 'http://localhost:3003/api';
+const API_URL = process.env.API_URL || 'http://localhost:3003/api';
 
 class Auth {
     constructor() {
