@@ -143,9 +143,9 @@ async function saveMaintenanceItems() {
             throw new Error('Du måste vara inloggad för att spara underhållsplanen');
         }
 
-        // Validera data innan vi skickar
-        if (!Array.isArray(maintenanceItems) || maintenanceItems.length === 0) {
-            throw new Error('Inga underhållsposter att spara');
+        // Om maintenanceItems är tom array, spara en tom array
+        if (!maintenanceItems) {
+            maintenanceItems = [];
         }
 
         const headers = {
@@ -155,11 +155,6 @@ async function saveMaintenanceItems() {
 
         // Förbered och validera data
         const itemsToSave = maintenanceItems.map(item => {
-            // Validera required fält
-            if (!item.category || !item.description || !item.cost || !item.plannedYear || !item.priority) {
-                throw new Error('Alla required fält måste fyllas i');
-            }
-
             return {
                 category: item.category,
                 description: item.description,
@@ -170,7 +165,7 @@ async function saveMaintenanceItems() {
                 interval: parseInt(item.interval) || 30,
                 name: item.description, // Använd description som name
                 date: item.date || new Date().toISOString().split('T')[0],
-                // Valfria fält
+                _id: item._id, // Behåll original _id om det finns
                 projectId: item.projectId,
                 energySaving: item.energySaving,
                 location: item.location,
@@ -179,7 +174,7 @@ async function saveMaintenanceItems() {
             };
         });
 
-        console.log('Prepared items to save:', itemsToSave);
+        console.log('Saving items:', itemsToSave);
 
         const response = await fetch('/api/maintenance/save', {
             method: 'POST',
@@ -187,20 +182,15 @@ async function saveMaintenanceItems() {
             body: JSON.stringify({ maintenanceItems: itemsToSave })
         });
 
-        console.log('Full response:', response);
-        console.log('Response status:', response.status);
-        console.log('Response headers:', Object.fromEntries([...response.headers]));
-
         if (!response.ok) {
             const errorData = await response.json();
-            console.error('Server error details:', errorData);
             throw new Error(errorData.message || 'Failed to save maintenance items');
         }
 
         const result = await response.json();
         console.log('Save successful:', result);
         
-        // Uppdatera lokala items med server response
+        // Uppdatera lokala items med server response om det finns
         if (result.items) {
             maintenanceItems = result.items;
             renderMaintenanceList();
@@ -209,11 +199,7 @@ async function saveMaintenanceItems() {
     } catch (error) {
         console.error('Error saving maintenance items:', error);
         console.error('Stack trace:', error.stack);
-        console.error('Request data:', {
-            maintenanceItems,
-            token: token ? 'Token exists' : 'No token'
-        });
-        alert(error.message || 'Det gick inte att spara underhållsplanen. Försök igen senare.');
+        throw error; // Låt anropande funktion hantera felet
     }
 }
 
@@ -317,10 +303,17 @@ function renderMaintenanceList() {
                                     <button class="btn btn-sm btn-outline-secondary" onclick="editItem(${item.id})">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${item.id})">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
+                                    <!--Uppdatera delete-knappen i HTML-genereringen-->
+                                    ${groupedItems[year].map(item => `
+                                        <div class="maintenance-item mb-3 p-3 border rounded">
+                                            <!-- ... andra fält ... -->
+                                            <button class="btn btn-danger btn-sm" 
+                                                    onclick="deleteItem('${item._id || item.id}')"
+                                                    title="Ta bort">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    `).join('')}
                             </div>
                         </div>
                     </div>
@@ -377,12 +370,35 @@ function editItem(itemId) {
 }
 
 function deleteItem(itemId) {
-    if (confirm('Är du säker på att du vill ta bort denna åtgärd?')) {
-        maintenanceItems = maintenanceItems.filter(item => item.id !== itemId);
-        saveMaintenanceItems();
-        updateCharts();
-        renderMaintenanceList();
+    console.log('Attempting to delete item with ID:', itemId);
+    
+    // Bekräfta borttagning
+    if (!confirm('Är du säker på att du vill ta bort denna post?')) {
+        return;
     }
+
+    // Hitta item med antingen _id eller id
+    maintenanceItems = maintenanceItems.filter(item => 
+        item._id !== itemId && item.id !== itemId
+    );
+
+    console.log('Items after deletion:', maintenanceItems);
+
+    // Kontrollera om vi har items kvar
+    if (maintenanceItems.length === 0) {
+        console.log('No items left after deletion');
+    }
+
+    // Spara, uppdatera charts och rendera om listan
+    saveMaintenanceItems()
+        .then(() => {
+            updateCharts();
+            renderMaintenanceList();
+        })
+        .catch(error => {
+            console.error('Error after deletion:', error);
+            alert('Ett fel uppstod vid borttagning av posten. Försök igen senare.');
+        });
 }
 
 function updateStatus(itemId, newStatus) {
