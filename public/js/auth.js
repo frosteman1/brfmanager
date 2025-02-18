@@ -8,17 +8,18 @@ class Auth {
     }
 
     checkAuth() {
-        const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
+        const isLoginPage = window.location.pathname === '/' || 
+                           window.location.pathname === '/index.html';
         
         if (this.token) {
-            // Om vi har en token och är på login-sidan, omdirigera till AppBrfManager
+            // Om vi har en token och är på login-sidan, omdirigera till app
             if (isLoginPage) {
-                window.location.href = 'AppBrfManager.html';
+                window.location.href = '/AppBrfManager.html';
             }
         } else {
-            // Om vi inte har en token och INTE är på login-sidan, omdirigera till login
+            // Om vi inte har en token och inte är på login-sidan, omdirigera till login
             if (!isLoginPage) {
-                window.location.href = 'index.html';
+                window.location.href = '/index.html';
             }
         }
     }
@@ -40,20 +41,19 @@ class Auth {
             const data = await response.json();
             console.log('Server response:', data);
 
-            if (!response.ok) {
+            if (response.ok) {
+                console.log('Token received:', data.token); // Debug log
+                localStorage.setItem('token', data.token);
+                // Redirect eller andra åtgärder efter inloggning
+                console.log('Login successful, storing token');
+                console.log('Redirecting to AppBrfManager.html');
+                // Redirect to AppBrfManager.html
+                window.location.href = '/AppBrfManager.html';
+            } else {
                 throw new Error(data.message || 'Login failed');
             }
-
-            console.log('Login successful, storing token');
-            // Store token and update instance
-            this.token = data.token;
-            localStorage.setItem('token', data.token);
-            
-            console.log('Redirecting to AppBrfManager.html');
-            // Redirect to AppBrfManager.html
-            window.location.href = '/AppBrfManager.html';
         } catch (error) {
-            console.error('Full error details:', error);
+            console.error('Login error:', error);
             const errorDiv = document.getElementById('loginError');
             errorDiv.textContent = error.message;
             errorDiv.classList.remove('d-none');
@@ -112,4 +112,10 @@ if (!window.location.pathname.includes('index.html')) {
         logoutBtn.onclick = () => auth.logout();
         nav.appendChild(logoutBtn);
     }
+}
+
+function isLoggedIn() {
+    const token = localStorage.getItem('token');
+    console.log('Current token:', token); // Debug log
+    return !!token;
 } 

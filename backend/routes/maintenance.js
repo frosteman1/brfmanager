@@ -7,7 +7,7 @@ const MaintenanceItem = require('../models/maintenanceitem.js');
 router.post('/save', auth, async (req, res) => {
     try {
         const { maintenanceItems } = req.body;
-        const userId = req.user.id;
+        const userId = req.user.userId;
 
         // Log for debugging
         console.log('Saving items:', maintenanceItems);
@@ -16,7 +16,7 @@ router.post('/save', auth, async (req, res) => {
         // Delete existing items for this user
         await MaintenanceItem.deleteMany({ userId });
 
-        // Save new items
+        // Save new items with userId
         const items = maintenanceItems.map(item => ({
             ...item,
             userId
