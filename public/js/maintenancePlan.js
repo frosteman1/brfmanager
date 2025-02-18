@@ -204,6 +204,7 @@ async function saveMaintenanceItems() {
         throw error;
     }
 }
+
 async function loadMaintenanceItems() {
     try {
         const token = localStorage.getItem('token');
@@ -304,17 +305,12 @@ function renderMaintenanceList() {
                                     <button class="btn btn-sm btn-outline-secondary" onclick="editItem(${item.id})">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <!--Uppdatera delete-knappen i HTML-genereringen-->
-                                    ${groupedItems[year].map(item => `
-                                        <div class="maintenance-item mb-3 p-3 border rounded">
-                                            <!-- ... andra fält ... -->
-                                            <button class="btn btn-danger btn-sm" 
-                                                    onclick="deleteItem('${item._id || item.id}')"
-                                                    title="Ta bort">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    `).join('')}
+                                    <button class="btn btn-danger btn-sm" 
+                                            onclick="deleteItem('${item._id || item.id}')"
+                                            title="Ta bort">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -430,21 +426,3 @@ function updateStatus(itemId, newStatus) {
         console.log('Available items:', maintenanceItems);
     }
 }
-
-// Add this CSS to your stylesheet
-const styles = `
-.status-indicator {
-    width: 4px;
-    height: 24px;
-    border-radius: 2px;
-}
-
-.status-planned { background-color: #6c757d; }
-.status-urgent { background-color: #dc3545; }
-.status-completed { background-color: #28a745; }
-.status-delayed { background-color: #ffc107; }
-
-.maintenance-item:hover {
-    background-color: #f8f9fa;
-}
-`;

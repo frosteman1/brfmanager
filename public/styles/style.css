@@ -71,3 +71,18 @@ body {
     color: white !important;
 }
 
+.status-indicator {
+    width: 4px;
+    height: 24px;
+    border-radius: 2px;
+}
+
+.status-planned { background-color: #6c757d; }
+.status-urgent { background-color: #dc3545; }
+.status-completed { background-color: #28a745; }
+.status-delayed { background-color: #ffc107; }
+
+.maintenance-item:hover {
+    background-color: #f8f9fa;
+}
+
