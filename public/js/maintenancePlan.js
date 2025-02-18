@@ -23,23 +23,23 @@ function addMaintenanceItem() {
     const editItemId = form.dataset.editItemId;
     
     const item = {
-        id: editItemId || Date.now(), // Use existing ID or create new one
+        id: editItemId || Date.now(),
         category: document.getElementById('category').value,
         description: document.getElementById('description').value,
         cost: parseInt(document.getElementById('cost').value),
         plannedYear: parseInt(document.getElementById('plannedYear').value),
         priority: document.getElementById('priority').value,
         status: 'Planerad',
-        interval: 30 // Default interval, you might want to make this configurable
+        interval: 30,
+        name: document.getElementById('description').value,
+        date: new Date().toISOString().split('T')[0]
     };
 
     if (editItemId) {
-        // Update existing item
         maintenanceItems = maintenanceItems.map(i => i.id === parseInt(editItemId) ? item : i);
         form.dataset.editItemId = '';
         form.querySelector('button[type="submit"]').textContent = 'Lägg till';
     } else {
-        // Add new item
         maintenanceItems.push(item);
     }
 
@@ -147,6 +147,8 @@ async function saveMaintenanceItems() {
             'x-auth-token': token
         };
 
+        console.log('Sending maintenance items:', maintenanceItems);
+
         const response = await fetch('/api/maintenance/save', {
             method: 'POST',
             headers: headers,
@@ -156,11 +158,17 @@ async function saveMaintenanceItems() {
         console.log('Response status:', response.status);
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Failed to save maintenance items');
+            const errorData = await response.json();
+            console.error('Server error details:', errorData);
+            throw new Error(errorData.message || 'Failed to save maintenance items');
         }
+
+        const result = await response.json();
+        console.log('Save successful:', result);
+        
     } catch (error) {
         console.error('Error saving maintenance items:', error);
+        console.error('Stack trace:', error.stack);
         alert(error.message || 'Det gick inte att spara underhållsplanen. Försök igen senare.');
     }
 }

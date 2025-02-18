@@ -38,7 +38,13 @@ const MaintenanceItemSchema = new mongoose.Schema({
     energySaving: Boolean,
     location: String,
     building: String,
-    actualCost: Number
+    actualCost: Number,
+    name: {
+        type: String,
+    },
+    date: {
+        type: String,
+    }
 });
 
-module.exports = mongoose.model('Maintenanceitem', MaintenanceItemSchema); 
+module.exports = mongoose.model('MaintenanceItem', MaintenanceItemSchema); 
