@@ -143,7 +143,6 @@ async function saveMaintenanceItems() {
             throw new Error('Du måste vara inloggad för att spara underhållsplanen');
         }
 
-        // Om maintenanceItems är tom array, spara en tom array
         if (!maintenanceItems) {
             maintenanceItems = [];
         }
@@ -153,28 +152,27 @@ async function saveMaintenanceItems() {
             'x-auth-token': token
         };
 
-        // Förbered och validera data
+        // Validera och förbered data
         const itemsToSave = maintenanceItems.map(item => {
+            // Validera required fält
+            if (!item.category || !item.description || !item.plannedYear) {
+                throw new Error(`Invalid item data: Missing required fields in item ${JSON.stringify(item)}`);
+            }
+
             return {
                 category: item.category,
                 description: item.description,
-                cost: parseInt(item.cost),
+                cost: parseInt(item.cost) || 0,
                 plannedYear: parseInt(item.plannedYear),
-                priority: item.priority,
+                priority: item.priority || 'Normal',
                 status: item.status || 'Planerad',
                 interval: parseInt(item.interval) || 30,
                 name: item.description, // Använd description som name
-                date: item.date || new Date().toISOString().split('T')[0],
-                _id: item._id, // Behåll original _id om det finns
-                projectId: item.projectId,
-                energySaving: item.energySaving,
-                location: item.location,
-                building: item.building,
-                actualCost: item.actualCost ? parseInt(item.actualCost) : undefined
+                date: new Date().toISOString().split('T')[0]
             };
         });
 
-        console.log('Saving items:', itemsToSave);
+        console.log('Attempting to save items:', itemsToSave);
 
         const response = await fetch('/api/maintenance/save', {
             method: 'POST',
@@ -182,24 +180,28 @@ async function saveMaintenanceItems() {
             body: JSON.stringify({ maintenanceItems: itemsToSave })
         });
 
+        const responseData = await response.json();
+        console.log('Full server response:', responseData);
+
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to save maintenance items');
+            throw new Error(responseData.error || responseData.message || 'Failed to save maintenance items');
         }
 
-        const result = await response.json();
-        console.log('Save successful:', result);
-        
-        // Uppdatera lokala items med server response om det finns
-        if (result.items) {
-            maintenanceItems = result.items;
-            renderMaintenanceList();
+        if (responseData.items) {
+            maintenanceItems = responseData.items;
+            console.log('Updated local items with server response');
         }
         
+        return responseData;
+        
     } catch (error) {
-        console.error('Error saving maintenance items:', error);
-        console.error('Stack trace:', error.stack);
-        throw error; // Låt anropande funktion hantera felet
+        console.error('Error in saveMaintenanceItems:', error);
+        console.error('Full error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
+        throw error;
     }
 }
 
@@ -412,9 +414,18 @@ function updateStatus(itemId, newStatus) {
     if (item) {
         console.log('Found item to update:', item);
         item.status = newStatus;
-        saveMaintenanceItems();
-        updateCharts();
-        renderMaintenanceList();
+        saveMaintenanceItems()
+            .then(() => {
+                updateCharts();
+                renderMaintenanceList();
+            })
+            .catch(error => {
+                console.error('Error updating status:', error);
+                // Återställ status om sparandet misslyckades
+                item.status = newStatus === 'Planerad' ? 'Akut' : 'Planerad';
+                renderMaintenanceList();
+                alert('Kunde inte uppdatera status. Försök igen senare.');
+            });
     } else {
         console.error(`Could not find item with id ${itemId}`);
         console.log('Available items:', maintenanceItems);
