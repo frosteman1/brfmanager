@@ -57,7 +57,7 @@ mongoose.connect(process.env.MONGODB_URI, {
     });
 
     // Start server only after DB connection
-    const PORT = process.env.PORT || 8080;
+    const PORT = process.env.PORT || 3000;
     const server = app.listen(PORT, '0.0.0.0', () => {
         console.log(`Server running on port ${PORT}`);
     });
@@ -78,20 +78,41 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Internal server error' });
 });
 
-// Start server
-const PORT = process.env.PORT || 8080;
-const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
-});
+// Start server with retry logic
+const startServer = (retries = 5) => {
+    const PORT = process.env.PORT || 3000;  // Ändrat från 8080 till 3000 som default
+    
+    const server = app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    }).on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.log(`Port ${PORT} is busy, trying another port...`);
+            if (retries > 0) {
+                // Try the next port
+                process.env.PORT = parseInt(PORT) + 1;
+                startServer(retries - 1);
+            } else {
+                console.error('No available ports found after retries');
+                process.exit(1);
+            }
+        } else {
+            console.error('Server error:', err);
+            process.exit(1);
+        }
+    });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-    console.log('Received SIGTERM signal');
-    server.close(() => {
-        console.log('Server closed');
-        mongoose.connection.close(false, () => {
-            console.log('MongoDB connection closed');
-            process.exit(0);
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+        console.log('Received SIGTERM signal');
+        server.close(() => {
+            console.log('Server closed');
+            mongoose.connection.close(false, () => {
+                console.log('MongoDB connection closed');
+                process.exit(0);
+            });
         });
     });
-});
+};
+
+// Start the server
+startServer();
