@@ -12,17 +12,26 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// MongoDB connection
+console.log('Attempting to connect to MongoDB...'); // Debug log
+
 mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     retryWrites: true,
-    w: 'majority',
-    dbName: 'brfmanager'  // Se till att detta är rätt namn på din databas
+    w: 'majority'
 })
-.then(() => console.log('✅ Connected to MongoDB'))
+.then(() => {
+    console.log('Successfully connected to MongoDB');
+    console.log('Database name:', mongoose.connection.name);
+})
 .catch(err => {
-    console.error('❌ MongoDB connection error:', err);
-    process.exit(1); // Stoppar appen om MongoDB inte funkar
+    console.error('MongoDB connection error details:', {
+        message: err.message,
+        code: err.code,
+        codeName: err.codeName
+    });
+    process.exit(1);
 });
 
 // Error handling
