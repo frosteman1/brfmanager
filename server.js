@@ -6,6 +6,24 @@ require('dotenv').config();
 
 const app = express();
 
+// Process error handling
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('Unhandled Rejection:', err);
+});
+
+process.on('SIGTERM', () => {
+    console.log('Received SIGTERM. Performing graceful shutdown...');
+    // Stäng MongoDB-anslutningen och servern ordentligt
+    mongoose.connection.close(() => {
+        console.log('MongoDB connection closed.');
+        process.exit(0);
+    });
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -20,6 +38,29 @@ mongoose.connect(process.env.MONGODB_URI, {
 .then(() => {
     console.log('Successfully connected to MongoDB');
     console.log('Database name:', mongoose.connection.name);
+    
+    // Routes
+    const authRoutes = require('./backend/routes/auth');
+    const maintenanceRoutes = require('./backend/routes/maintenance');
+
+    app.use('/api/auth', authRoutes);
+    app.use('/api/maintenance', maintenanceRoutes);
+
+    // Serve static files for any other route
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    });
+
+    // Start server only after DB connection
+    const PORT = process.env.PORT || 8080;
+    const server = app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+
+    // Graceful shutdown
+    server.on('error', (err) => {
+        console.error('Server error:', err);
+    });
 })
 .catch(err => {
     console.error('MongoDB connection error details:', {
@@ -30,25 +71,11 @@ mongoose.connect(process.env.MONGODB_URI, {
     process.exit(1);
 });
 
-// Routes
-const authRoutes = require('./backend/routes/auth');
-const maintenanceRoutes = require('./backend/routes/maintenance');
-
-app.use('/api/auth', authRoutes);
-app.use('/api/maintenance', maintenanceRoutes);
-
-// Serve static files for any other route
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
-
-// Error handling
+// Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something broke!');
+    console.error('Error:', err);
+    res.status(500).json({ 
+        message: 'Something went wrong!',
+        error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
 });
