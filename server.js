@@ -40,5 +40,7 @@ app.use('/api/auth', require('./backend/routes/auth.js'));
 app.use('/api/buildings', require('./backend/routes/buildings.js'));
 app.use('/api/maintenance', require('./backend/routes/maintenance.js'));
 
+console.log('Server has started and should be running...');
+
 // Start server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
