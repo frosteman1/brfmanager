@@ -16,7 +16,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/brfmanager';
 mongoose.connect(mongoURI)
     .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('Could not connect to MongoDB:', err));
+    .catch(err => {
+        console.error('MongoDB connection error:', err);
+        process.exit(1);  // Avsluta appen om anslutningen misslyckas
+    });
 
 // Routes
 app.use('/api/auth', require('./backend/routes/auth.js'));
