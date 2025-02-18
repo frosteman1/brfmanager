@@ -6,6 +6,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Log incoming requests
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    next();
+});
+
 // Quick response endpoints
 app.get('/health', (req, res) => {
     res.status(200).send('OK');
@@ -20,18 +26,20 @@ app.get('/favicon.ico', (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 8080;
-const server = app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+const PORT = process.env.PORT || 3002; // Matcha Railway's port
+const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running at http://0.0.0.0:${PORT}`);
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('IPv6 enabled:', process.env.IPv6);
 });
 
-// Handle server timeouts
-server.keepAliveTimeout = 61 * 1000;
-server.headersTimeout = 65 * 1000;
+// Increase timeouts
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;
 
-// Basic error handling
+// Error handling
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    console.error('Error:', err);
     res.status(500).send('Something broke!');
 });
 
@@ -43,3 +51,6 @@ process.on('SIGTERM', () => {
         process.exit(0);
     });
 });
+
+// Keep process alive
+process.stdin.resume();
