@@ -219,37 +219,34 @@ async function saveMaintenanceItems() {
 
 async function loadMaintenanceItems() {
     try {
-        const token = localStorage.getItem('token');  // Hämta token från localStorage
-        
+        const token = localStorage.getItem('token');
         if (!token) {
-            throw new Error('Du måste vara inloggad för att ladda underhållsplanen');
+            throw new Error('No token found');
         }
 
         const response = await fetch('/api/maintenance/load', {
-            method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
-                'x-auth-token': token  // Använd token-variabeln här
+                'x-auth-token': token
             }
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to load maintenance items');
+            throw new Error('Failed to load maintenance items');
         }
 
         const data = await response.json();
-        if (Array.isArray(data.maintenanceItems)) {
-            maintenanceItems = data.maintenanceItems;
-            updateCharts();
-            renderMaintenanceList();
-        } else {
-            console.error('Unexpected data format:', data);
-            throw new Error('Invalid data format received from server');
-        }
+        maintenanceItems = data.maintenanceItems.map(item => ({
+            ...item,
+            id: item._id // Säkerställ att vi har både _id och id
+        }));
+        
+        console.log('Loaded items:', maintenanceItems);
+        
+        updateCharts();
+        renderMaintenanceList();
     } catch (error) {
         console.error('Error loading maintenance items:', error);
-        alert('Det gick inte att ladda underhållsplanen. Försök igen senare.');
+        alert('Kunde inte ladda underhållsplanen. Försök igen senare.');
     }
 }
 
@@ -308,7 +305,7 @@ function renderMaintenanceList() {
                                 </div>
                                 <div class="status-dropdown me-3">
                                     <select class="form-select form-select-sm" 
-                                            onchange="updateStatus('${item._id}', this.value)"
+                                            onchange="updateStatus('${item._id || item.id}', this.value)"
                                             style="min-width: 100px;">
                                         <option value="Planerad" ${item.status === 'Planerad' ? 'selected' : ''}>Planerad</option>
                                         <option value="Akut" ${item.status === 'Akut' ? 'selected' : ''}>Akut</option>
@@ -389,23 +386,22 @@ function deleteItem(itemId) {
 }
 
 function updateStatus(itemId, newStatus) {
-    console.log(`Updating status for itemId: ${itemId}, newStatus: ${newStatus}`); // Debug
+    console.log(`Attempting to update status. ItemId: ${itemId}, NewStatus: ${newStatus}`);
     
-    // Konvertera itemId till nummer om det är en sträng
-    const id = typeof itemId === 'string' ? parseInt(itemId) : itemId;
-    
-    // Hitta item med exakt ID-matchning
-    const item = maintenanceItems.find(i => i.id === id);
+    // Hitta item med antingen _id eller id
+    const item = maintenanceItems.find(i => 
+        (i._id === itemId) || (i.id && i.id.toString() === itemId.toString())
+    );
     
     if (item) {
-        console.log('Found item to update:', item); // Debug
+        console.log('Found item to update:', item);
         item.status = newStatus;
         saveMaintenanceItems();
         updateCharts();
         renderMaintenanceList();
     } else {
-        console.error(`Could not find item with id ${id}`); // Debug
-        console.log('Available items:', maintenanceItems); // Debug
+        console.error(`Could not find item with id ${itemId}`);
+        console.log('Available items:', maintenanceItems);
     }
 }
 
