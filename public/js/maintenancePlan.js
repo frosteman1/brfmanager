@@ -204,7 +204,6 @@ async function saveMaintenanceItems() {
         throw error;
     }
 }
-
 async function loadMaintenanceItems() {
     try {
         const token = localStorage.getItem('token');
