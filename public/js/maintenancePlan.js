@@ -22,8 +22,9 @@ function addMaintenanceItem() {
     const form = document.getElementById('maintenanceForm');
     const editItemId = form.dataset.editItemId;
     
+    // Använd MongoDB-kompatibelt ID-format
     const item = {
-        id: editItemId || Date.now(),
+        _id: editItemId || new Date().getTime().toString(), // Använd _id istället för id
         category: document.getElementById('category').value,
         description: document.getElementById('description').value,
         cost: parseInt(document.getElementById('cost').value),
@@ -36,7 +37,7 @@ function addMaintenanceItem() {
     };
 
     if (editItemId) {
-        maintenanceItems = maintenanceItems.map(i => i.id === parseInt(editItemId) ? item : i);
+        maintenanceItems = maintenanceItems.map(i => i._id === editItemId ? item : i);
         form.dataset.editItemId = '';
         form.querySelector('button[type="submit"]').textContent = 'Lägg till';
     } else {
@@ -264,7 +265,7 @@ function renderMaintenanceList() {
                                 </div>
                                 <div class="status-dropdown me-3">
                                     <select class="form-select form-select-sm" 
-                                            onchange="updateStatus(${item.id}, this.value)"
+                                            onchange="updateStatus('${item._id}', this.value)"
                                             style="min-width: 100px;">
                                         <option value="Planerad" ${item.status === 'Planerad' ? 'selected' : ''}>Planerad</option>
                                         <option value="Akut" ${item.status === 'Akut' ? 'selected' : ''}>Akut</option>
@@ -345,16 +346,23 @@ function deleteItem(itemId) {
 }
 
 function updateStatus(itemId, newStatus) {
-    console.log(`Updating status for itemId: ${itemId}, newStatus: ${newStatus}`); // Debugging line
-    const item = maintenanceItems.find(i => i.id === itemId);
+    console.log(`Updating status for itemId: ${itemId}, newStatus: ${newStatus}`); // Debug
+    
+    // Konvertera itemId till nummer om det är en sträng
+    const id = typeof itemId === 'string' ? parseInt(itemId) : itemId;
+    
+    // Hitta item med exakt ID-matchning
+    const item = maintenanceItems.find(i => i.id === id);
+    
     if (item) {
-        item.status = newStatus; // Update the item's status
-        console.log(`Item found:`, item); // Debugging line
-        saveMaintenanceItems(); // Save the updated items
-        updateCharts(); // Update the charts to reflect the change
-        renderMaintenanceList(); // Re-render the maintenance list
+        console.log('Found item to update:', item); // Debug
+        item.status = newStatus;
+        saveMaintenanceItems();
+        updateCharts();
+        renderMaintenanceList();
     } else {
-        console.error(`Item with id ${itemId} not found.`); // Debugging line
+        console.error(`Could not find item with id ${id}`); // Debug
+        console.log('Available items:', maintenanceItems); // Debug
     }
 }
 
