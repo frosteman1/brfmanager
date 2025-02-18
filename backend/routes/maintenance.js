@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const MaintenanceItem = require('../models/MaintenanceItem');
+const MaintenanceItem = require('../models/maintenanceitem');
 
 // GET maintenance items
 router.get('/', auth, async (req, res) => {
