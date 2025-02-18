@@ -15,9 +15,13 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/mydatabase';
+mongoose.connect(mongoURI, { 
+    useNewUrlParser: true, 
+    useUnifiedTopology: true 
+})
     .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.log('Could not connect to MongoDB:', err));
+    .catch(err => console.error('Could not connect to MongoDB:', err));
 
 // Routes
 app.use('/api/auth', require('./backend/routes/auth.js'));
