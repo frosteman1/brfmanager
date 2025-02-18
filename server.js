@@ -12,14 +12,30 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MongoDB Connection
-const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/brfmanager';
-mongoose.connect(mongoURI)
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => {
-        console.error('MongoDB connection error:', err);
-        process.exit(1);  // Avsluta appen om anslutningen misslyckas
-    });
+// MongoDB connection with more options
+mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    retryWrites: true,
+    w: 'majority',
+    dbName: 'brfmanager'  // Lägg till namnet på din databas här
+})
+.then(() => {
+    console.log('Connected to MongoDB');
+})
+.catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+});
+
+// Error handling
+mongoose.connection.on('error', err => {
+    console.error('MongoDB connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.log('MongoDB disconnected');
+});
 
 // Routes
 app.use('/api/auth', require('./backend/routes/auth.js'));
