@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Connect to MongoDB
-const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/mydatabase';
+const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mydatabase';
 mongoose.connect(mongoURI, { 
     useNewUrlParser: true, 
     useUnifiedTopology: true 
@@ -34,4 +34,4 @@ app.get('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3002;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
