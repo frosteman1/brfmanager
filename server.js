@@ -7,13 +7,26 @@ require('dotenv').config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:3000', 'https://www.brfmanager.com'],
+    credentials: true
+}));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Basic route for testing
+app.get('/', (req, res) => {
+    res.send('Server is running');
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'OK' });
+    res.status(200).json({ 
+        status: 'OK',
+        timestamp: new Date(),
+        uptime: process.uptime()
+    });
 });
 
 let server;
@@ -47,9 +60,11 @@ mongoose.connect(process.env.MONGODB_URI, {
     });
 
     // Start server
-    const PORT = process.env.PORT || 3000;
-    server = app.listen(PORT, () => {
+    const PORT = process.env.PORT || 8080;
+    server = app.listen(PORT, '0.0.0.0', () => {
         console.log(`Server running on port ${PORT}`);
+        console.log(`Environment: ${process.env.NODE_ENV}`);
+        console.log(`Server URL: ${process.env.NODE_ENV === 'production' ? 'https://www.brfmanager.com' : 'http://localhost:' + PORT}`);
     });
 })
 .catch(err => {
@@ -88,7 +103,10 @@ process.on('SIGINT', () => {
     }
 });
 
-// Unhandled rejections and exceptions
+// Keep the process alive
+process.stdin.resume();
+
+// Log any unhandled errors
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
