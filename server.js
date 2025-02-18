@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -8,6 +9,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Log incoming requests
 app.use((req, res, next) => {
@@ -27,7 +31,7 @@ mongoose.connect(process.env.MONGODB_URI)
     .then(() => {
         console.log('Successfully connected to MongoDB');
         
-        // Routes (only add after DB connection)
+        // Routes
         const authRoutes = require('./backend/routes/auth');
         app.use('/api/auth', authRoutes);
         
@@ -35,10 +39,9 @@ mongoose.connect(process.env.MONGODB_URI)
     })
     .catch(err => {
         console.error('MongoDB connection error:', err);
-        // Don't exit process, let server continue running
     });
 
-// Basic routes
+// API routes
 app.get('/health', (req, res) => {
     res.status(200).json({
         status: 'OK',
@@ -46,12 +49,9 @@ app.get('/health', (req, res) => {
     });
 });
 
-app.get('/', (req, res) => {
-    res.status(200).send('Server is running');
-});
-
-app.get('/favicon.ico', (req, res) => {
-    res.status(204).end();  // No content response for favicon
+// Serve index.html for all other routes (SPA support)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Error handling
