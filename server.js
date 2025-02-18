@@ -27,7 +27,12 @@ process.on('SIGTERM', () => {
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public')); // Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'OK' });
+});
 
 // MongoDB connection
 console.log('Attempting to connect to MongoDB...');
@@ -53,7 +58,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 
     // Start server only after DB connection
     const PORT = process.env.PORT || 8080;
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
         console.log(`Server running on port ${PORT}`);
     });
 
@@ -63,19 +68,30 @@ mongoose.connect(process.env.MONGODB_URI, {
     });
 })
 .catch(err => {
-    console.error('MongoDB connection error details:', {
-        message: err.message,
-        code: err.code,
-        codeName: err.codeName
-    });
+    console.error('MongoDB connection error:', err);
     process.exit(1);
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err);
-    res.status(500).json({ 
-        message: 'Something went wrong!',
-        error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    res.status(500).json({ message: 'Internal server error' });
+});
+
+// Start server
+const PORT = process.env.PORT || 8080;
+const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('Received SIGTERM signal');
+    server.close(() => {
+        console.log('Server closed');
+        mongoose.connection.close(false, () => {
+            console.log('MongoDB connection closed');
+            process.exit(0);
+        });
     });
 });
