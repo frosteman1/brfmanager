@@ -136,14 +136,24 @@ function updateTotalCosts() {
 
 async function saveMaintenanceItems() {
     try {
-        const response = await fetch('http://localhost:3002/api/maintenance/save', {
+        const token = localStorage.getItem('token');
+    
+        if (!token) {
+            throw new Error('Du måste vara inloggad för att spara underhållsplanen');
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'x-auth-token': token
+        };
+
+        const response = await fetch('/api/maintenance/save', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
+            headers: headers,
             body: JSON.stringify({ maintenanceItems })
         });
+
+        console.log('Response status:', response.status);
 
         if (!response.ok) {
             const error = await response.json();
@@ -151,17 +161,23 @@ async function saveMaintenanceItems() {
         }
     } catch (error) {
         console.error('Error saving maintenance items:', error);
-        alert('Det gick inte att spara underhållsplanen. Försök igen senare.');
+        alert(error.message || 'Det gick inte att spara underhållsplanen. Försök igen senare.');
     }
 }
 
 async function loadMaintenanceItems() {
     try {
-        const response = await fetch('http://localhost:3002/api/maintenance/load', {
+        const token = localStorage.getItem('token');  // Hämta token från localStorage
+        
+        if (!token) {
+            throw new Error('Du måste vara inloggad för att ladda underhållsplanen');
+        }
+
+        const response = await fetch('/api/maintenance/load', {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'Accept': 'application/json'
+                'Content-Type': 'application/json',
+                'x-auth-token': token  // Använd token-variabeln här
             }
         });
 
