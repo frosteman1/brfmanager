@@ -10,16 +10,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, 'public')));
-
 // Log incoming requests
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
     next();
 });
 
-// Start server first
+// API Routes - MÅSTE komma FÖRE static file serving
+const authRoutes = require('./backend/routes/auth');
+const maintenanceRoutes = require('./backend/routes/maintenance');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/maintenance', maintenanceRoutes);
+
+// Serve static files EFTER API routes
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve index.html for all other routes (SPA support)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Start server
 const PORT = process.env.PORT || 3002;
 const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running at http://0.0.0.0:${PORT}`);
@@ -30,15 +42,6 @@ console.log('Attempting to connect to MongoDB...');
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => {
         console.log('Successfully connected to MongoDB');
-        
-        // Routes
-        const authRoutes = require('./backend/routes/auth');
-        app.use('/api/auth', authRoutes);
-        
-        const maintenanceRoutes = require('./backend/routes/maintenance');
-        app.use('/api/maintenance', maintenanceRoutes);
-        
-        // Add other routes here as needed
     })
     .catch(err => {
         console.error('MongoDB connection error:', err);
@@ -50,11 +53,6 @@ app.get('/health', (req, res) => {
         status: 'OK',
         mongo: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'
     });
-});
-
-// Serve index.html for all other routes (SPA support)
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Error handling
