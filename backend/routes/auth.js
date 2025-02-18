@@ -1,20 +1,22 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/user.js');
+const User = require('../models/User.js');
 
 // Register
 router.post('/register', async (req, res) => {
     try {
         const { email, password, companyName } = req.body;
-
-        // Check if user exists
+        
+        if (!email || !password || !companyName) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+        
         let user = await User.findOne({ email });
         if (user) {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Create new user
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -25,17 +27,8 @@ router.post('/register', async (req, res) => {
         });
 
         await user.save();
-
-        // Create token
-        const token = jwt.sign(
-            { userId: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-        );
-
-        res.json({ token });
+        res.json({ message: 'User created successfully' });
     } catch (err) {
-        console.error(err);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -45,19 +38,16 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Check if user exists
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        // Validate password
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        // Create token
         const token = jwt.sign(
             { userId: user._id },
             process.env.JWT_SECRET,
@@ -66,6 +56,18 @@ router.post('/login', async (req, res) => {
 
         res.json({ token });
     } catch (err) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Temporär route för att lista användare (ta bort i produktion!)
+router.get('/users', async (req, res) => {
+    try {
+        const users = await User.find({}, { email: 1, _id: 1 }); // Exkludera lösenord
+        console.log('Found users:', users);
+        res.json(users);
+    } catch (err) {
+        console.error('Error fetching users:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });

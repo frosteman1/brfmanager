@@ -1,5 +1,5 @@
 // Configuration
-const API_URL = 'http://localhost:3002/api';
+const API_URL = 'http://localhost:3003/api';
 
 class Auth {
     constructor() {
@@ -8,22 +8,24 @@ class Auth {
     }
 
     checkAuth() {
+        const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
+        
         if (this.token) {
-            // If we have a token but we're on login page, redirect to main page
-            if (window.location.pathname.includes('login.html')) {
+            // Om vi har en token och är på login-sidan, omdirigera till AppBrfManager
+            if (isLoginPage) {
+                window.location.href = 'AppBrfManager.html';
+            }
+        } else {
+            // Om vi inte har en token och INTE är på login-sidan, omdirigera till login
+            if (!isLoginPage) {
                 window.location.href = 'index.html';
             }
-        } else if (!window.location.pathname.includes('login.html')) {
-            // If we don't have a token and we're not on login page, redirect to login
-            window.location.href = 'login.html';
         }
     }
 
     async login(email, password) {
-        console.log('Login attempt with:', { email }); // Don't log passwords
-        
         try {
-            console.log('Sending request to:', `${API_URL}/auth/login`);
+            console.log('Attempting login with:', { email, password }); // Temporary debug log
             
             const response = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
@@ -33,9 +35,10 @@ class Auth {
                 body: JSON.stringify({ email, password })
             });
 
+            // Logga hela svaret
             console.log('Response status:', response.status);
             const data = await response.json();
-            console.log('Login response:', data);
+            console.log('Server response:', data);
 
             if (!response.ok) {
                 throw new Error(data.message || 'Login failed');
@@ -50,8 +53,7 @@ class Auth {
             // Redirect to AppBrfManager.html
             window.location.href = '/AppBrfManager.html';
         } catch (error) {
-            console.error('Login error:', error);
-            // Show error message
+            console.error('Full error details:', error);
             const errorDiv = document.getElementById('loginError');
             errorDiv.textContent = error.message;
             errorDiv.classList.remove('d-none');
@@ -61,7 +63,7 @@ class Auth {
     logout() {
         localStorage.removeItem('token');
         this.token = null;
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
     }
 
     // Helper method to get headers for authenticated requests
@@ -101,7 +103,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 });
 
 // Add logout button to main page
-if (!window.location.pathname.includes('login.html')) {
+if (!window.location.pathname.includes('index.html')) {
     const nav = document.querySelector('.container');
     if (nav) {
         const logoutBtn = document.createElement('button');
