@@ -337,12 +337,16 @@ function deleteItem(itemId) {
 }
 
 function updateStatus(itemId, newStatus) {
+    console.log(`Updating status for itemId: ${itemId}, newStatus: ${newStatus}`); // Debugging line
     const item = maintenanceItems.find(i => i.id === itemId);
     if (item) {
         item.status = newStatus; // Update the item's status
+        console.log(`Item found:`, item); // Debugging line
         saveMaintenanceItems(); // Save the updated items
         updateCharts(); // Update the charts to reflect the change
         renderMaintenanceList(); // Re-render the maintenance list
+    } else {
+        console.error(`Item with id ${itemId} not found.`); // Debugging line
     }
 }
 
